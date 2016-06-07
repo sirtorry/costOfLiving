@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>U.S. Powerplants</title>
+
+<script type="text/javascript" src="csvToArray.js"></script>
+<script type="text/javascript" src="getFileAJAX.js"></script>
+
+<script type="text/javascript">
+	var file = "powerplants_allUS.csv";
+	getFileAJAX(file);
+	var myData;
+	
+	function dosomething(data) {
+		myData = csvToArray(data);
+		
+		for (var i=0; i<myData.length; i++) {
+			//document.write(myData[i][7] + "<br />");	
+			definePlant(myData[i]);
+		}
+	}
+	
+	var svgns = "http://www.w3.org/2000/svg";
+	var originX = 0;
+	var originY = 800;
+	
+	function definePlant(data) {
+		// setup the data mapping
+		var co2eVal = parseFloat(data[6]);
+		var longitude = parseFloat(data[4]);
+		var genCap = parseFloat(data[5]);
+		var fuelType = data[7];
+		
+		var centerY = originY - co2eVal/30000;
+		var centerX = 1000 + ((65 + longitude) * 10);
+		var radius = 1 + genCap/200000;
+		
+		document.write(centerX + "," + centerY + "," + radius + "<br />");
+		
+	}
+	
+	
+
+</script>
+
+</head>
+
+<body>
+<h2>U.S. Powerplants</h2>
+<svg id="mySVG" width="1000" height="1000"></svg>
+</body>
+</html>

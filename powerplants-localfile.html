@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Powerplants</title>
+    <style>
+	circle {
+		stroke: #aaaaaa; 
+		stroke-width: 1px;
+		opacity: .6;	
+	}
+    </style>
+    
+    <script type="text/javascript" src="csvToArray.js"> </script>
+    <script type="text/javascript">
+
+		// AJAX
+// 		xmlhttp=new XMLHttpRequest();
+// 		xmlhttp.onreadystatechange=function() {
+// 			if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+// 				var data = xmlhttp.responseText;
+// 				dosomething(data);
+// 			}
+// 		}
+// 		
+// 		xmlhttp.open("GET","powerplants_allUS.csv",true);
+// 		xmlhttp.send();
+		
+		var data;
+		function handleFileSelect(evt) {
+			var file = document.getElementById('files').files[0];		
+			var reader = new FileReader();
+
+			reader.onload = function(e) {
+				data = reader.result;
+				//console.log(data);
+				dosomething(data);
+			}
+			reader.readAsText(file);
+		}
+	      
+        function dosomething (data) {
+            myData = csvToArray(data);
+            
+            for (i=0; i<myData.length; i++) {
+				drawCircle(myData[i]);
+            }
+        }
+		
+		function drawCircle(data) {
+			var svgns = "http://www.w3.org/2000/svg";
+			var mysvg = document.getElementById("mySVG");
+			
+			// set up the drawing environment
+			var originX = 0;
+			var originY = 800;
+			
+			// figure out where this circle goes, based on the data
+			var centerY = originY - parseFloat(data[6])/30000;		// co2e output
+			var centerX = 1000 + ((65 + parseFloat(data[4])) * 10); 	//set it by longitude
+			var radius = 1 + parseFloat(data[5])/200000; 				//generation capacity
+			
+			switch (data[7]) {
+				case "COAL":
+					color="#000000";	//black
+					break;
+				case "BIOMASS":
+					color="#00ff00";	//green
+					break;
+				case "HYDRO":
+					color="#0000ff";	//blue
+					break;
+				case "OIL":
+					color="#777700";	//brown
+					break;
+				case "GAS":
+					color="#ffff00";	//yellow
+					break;
+				case "NUCLEAR":
+					color="#00ffff";	//cyan
+					break;
+				default:
+					color="#ffffff";	//white
+			}
+					
+			var circle = document.createElementNS(svgns,"circle");
+			circle.setAttribute('r', radius);
+			circle.setAttribute('cx', centerX);
+			circle.setAttribute('cy', centerY);
+			circle.setAttribute('fill', color);
+			mysvg.appendChild(circle);
+		}
+      
+    </script>
+</head>
+
+<body>
+
+<p id="container">US Powerplants</p>
+<p><input type="file" id="files" name="files" onChange="handleFileSelect()" /></p>
+
+<svg id="mySVG" width=1000 height=1000></svg>
+
+</body>
+</html>

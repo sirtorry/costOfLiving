@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+<title>Powerplants</title>
+<style>
+	circle {
+		stroke: #aaaaaa; 
+		stroke-width: 1px;
+		opacity: .6;	
+	}
+</style>
+
+<script type="text/javascript" src="csvToArray.js"></script>
+<script type="text/javascript" src="getFileAJAX.js"></script>
+
+<script type="text/javascript">
+    
+	var file = "powerplants_allUS.csv";
+	getFileAJAX(file);
+  
+    // setup the drawing environment
+    var svgns = "http://www.w3.org/2000/svg";
+    var originX = 0;
+    var originY = 800;
+
+	function dosomething(data) {
+		// convert the data (which is just text) into a structured Array.  This uses the file included above.
+		myData = csvToArray(data);
+
+		// now loop through each piece of data (each powerplant in the list)
+		// and draw it
+		for (i=0; i<myData.length; i++) {
+            //document.write(myData[i][0] + "<br />");
+			definePlant(myData[i]);
+		}
+	}
+
+	function definePlant(data) {
+		// setup the data mapping
+		var plantName = data[0];                // unique plant name, to identify it
+		var co2eVal = parseFloat(data[6]);	    // co2e output
+		var longitude = parseFloat(data[4]);	// longitude
+		var genCap = parseFloat(data[5]);	    // generation capacity
+		var fuelType = data[7];				    // primary fuel type
+		
+		// figure out where this circle goes, based on the data
+		var centerY = originY - co2eVal/30000;			// height is co2e output
+		var centerX = 1000 + ((65 + longitude) * 10); 	// horizontal set by longitude
+		var radius = 1 + genCap/200000; 				// radius is generation capacity
+		
+		
+		switch (fuelType) {
+			case "COAL":
+				color="#000000";		//black
+				break;
+			case "BIOMASS":
+				color="#00ff00";		//green
+				break;
+			case "HYDRO":
+				color="#0000ff";		//blue
+				break;
+			case "OIL":
+				color="#777700";		//brown
+				break;
+			case "GAS":
+				color="#ffff00";		//yellow
+				break;
+			case "NUCLEAR":
+				color="#00ffff";		//cyan
+				break;
+			default:
+				color="#ffffff";		//white
+		}
+	    
+	    drawCircle (radius, centerX, centerY, color, plantName);
+	}
+	
+	function drawCircle(r,cx,cy,fill,id) {
+	    // Draw a circle using parameters
+		// identify the SVG that we're drawing on
+		var mysvg = document.getElementById("mySVG");
+		
+		// Draw Circle on it
+		var circle = document.createElementNS(svgns,"line");
+		circle.setAttribute('r', r);
+		circle.setAttribute('cx', cx);
+		circle.setAttribute('cy', cy);
+		circle.setAttribute('fill', fill);
+		circle.setAttribute('id', id);
+		mysvg.appendChild(circle);
+	}
+  
+</script>
+</head>
+
+<body>
+
+<h1>U.S. Powerplants</h1>
+<svg id="mySVG" width=1000 height=1000></svg>
+
+</body>
+</html>

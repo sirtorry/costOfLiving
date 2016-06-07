@@ -1,0 +1,443 @@
+<link rel="shortcut icon" type="image/ico" href="favicon.ico" />
+<!doctype html>
+<html>
+<head>
+<title>Cost of Living in America</title>
+<style>
+/*	bar {
+		stroke: #aaaaaa; 
+		stroke-width: 1px;
+		opacity: .6;	
+	}*/
+	#controls {
+		position: absolute;
+		font-family: helvetica,arial,sans-serif;
+		color: #E97F02;
+	}
+	#popup {
+		position: absolute;
+		visibility: hidden;
+		padding: 5px;
+		border: 1px solid #aaaaaa;
+		background-color: #FFFFFF;
+		box-shadow: 2px 2px 2px #ccc;
+		font-size: 12px;
+		font-family: helvetica,arial,sans-serif;
+	}
+</style>
+
+<script type="text/javascript" src="csvToArray.js"></script>
+<script type="text/javascript" src="getFileAJAX.js"></script>
+
+<script type="text/javascript">
+    
+	var file = "dataNoHeading.csv";
+	getFileAJAX(file);
+  
+
+    // setup the drawing environment
+    var svgns = "http://www.w3.org/2000/svg";
+
+	function doSomething(data) {
+		// convert the data (which is just text) into a structured Array.  This uses the file included above.
+		myData = csvToArray(data);
+
+		// now loop through each piece of data (each powerplant in the list)
+		// and draw it
+		for (i=0; i<myData.length-1; i++) {
+			//document.write(myData[i][9] + "<br />");
+			if(myData[i][8]!=0) {
+				defineArea(i,myData[i]);
+			}
+		}
+		bringBarsToFront();
+		drawLegend();
+	}
+	
+	function drawLegend() {
+		var maxInc = 53046*2.7;
+		var medInc = 53046;
+		var medStart = 1480 - medInc/2000;
+		var medEnd = 1480 + medInc/2000;
+	    var maxStart = 1480 - maxInc/2000;
+	    var maxEnd = 1480 + maxInc/2000;
+		var startY = 800
+		drawLegendLine(maxStart,startY,maxEnd,startY,'legend', 'N/A');
+		drawLegendLine(maxStart,startY,maxStart,startY-10,'legend', 'N/A');
+		drawLegendLine(maxEnd,startY,maxEnd,startY-10,'legend', 'N/A');
+		drawLegendLine(medStart,startY,medStart,startY-10,'legend', 'N/A');
+		drawLegendLine(medEnd,startY,medEnd,startY-10,'legend', 'N/A');
+	}
+
+	function dimAll() {
+		var relevantElements = document.getElementsByClassName('bar');
+		for (x = 0; x < relevantElements.length-1; x++) {
+			relevantElements[x].setAttribute('opacity',0.2);
+		}
+		relevantElements = document.getElementsByClassName('connector');
+		for (x = 0; x < relevantElements.length-1; x++) {
+			relevantElements[x].setAttribute('opacity',0.1);
+		}
+	}
+	
+	function resetAll() {
+		var relevantElements = document.getElementsByClassName('bar');
+		for (x = 0; x < relevantElements.length-1; x++) {
+			relevantElements[x].setAttribute('opacity',1);		
+		}
+		relevantElements = document.getElementsByClassName('connector');
+		for (x = 0; x < relevantElements.length-1; x++) {
+			relevantElements[x].setAttribute('opacity',0.4);
+		}
+	}
+ 
+ 	function filterState(state) {
+		if (state == "All") {
+			resetAll();	
+		} else {
+			dimAll();	
+		}
+		
+		var relevantElements = document.getElementsByClassName(state);
+		for (x = 0; x < relevantElements.length-1; x++) {
+			if(relevantElements[x].getAttribute('class').split(" ")[0] == 'bar') {
+				relevantElements[x].setAttribute('opacity',1);
+			}
+			else {
+				relevantElements[x].setAttribute('opacity',0.4);
+			}
+		}
+	}
+
+	function mouseOver(evt) {
+		var object = evt.target;
+		var objectId = object.getAttribute("id");
+		//console.log(object.getAttribute('class'));
+
+		var mysvg = document.getElementById("mySVG");
+		var relevantElements = document.getElementsByClassName(objectId);
+		for(x = relevantElements.length-1; x >= 0; x--) {
+			if(relevantElements[x].getAttribute('class').split(" ")[0] == 'bar') {
+				relevantElements[x].setAttribute('stroke', '#8A9B0F');
+				relevantElements[x].setAttribute('stroke-width', 5);
+			}
+			else {
+				relevantElements[x].setAttribute('stroke', '#8A9B0F');
+				relevantElements[x].setAttribute('stroke-width', 2);
+				relevantElements[x].setAttribute('opacity',1);
+			}
+		}
+		var id=event.target.id;
+		document.getElementById('areaName').innerHTML = myData[id][0];
+		document.getElementById('relative').innerHTML = (myData[id][11]*100).toFixed(1);
+		document.getElementById('income').innerHTML = ((myData[id][8]/53046)*100).toFixed(1);
+		document.getElementById('composite').innerHTML = myData[id][1];
+		document.getElementById('housing').innerHTML = myData[id][3];
+		document.getElementById('grocery').innerHTML = myData[id][2];
+		document.getElementById('transportation').innerHTML = myData[id][5];
+		document.getElementById('utilities').innerHTML = myData[id][4];
+		document.getElementById('health').innerHTML = myData[id][6];
+		document.getElementById('misc').innerHTML = myData[id][7];
+		
+		var popup = document.getElementById('popup');
+		popup.style.left = event.pageX + 5 + "px";
+		popup.style.top = event.pageY + 5 + "px";
+		popup.style.visibility = "visible";
+	}
+
+	function mouseOut(evt) {
+		var object = evt.target;
+		var objectId = object.getAttribute("id");
+
+		var mysvg = document.getElementById("mySVG");
+		var relevantElements = document.getElementsByClassName(objectId);
+		for(x = relevantElements.length-1; x >= 0; x--) {
+			if(relevantElements[x].getAttribute('class').split(" ")[0] == 'bar') {
+				relevantElements[x].setAttribute('stroke', '#E97F02');
+				relevantElements[x].setAttribute('stroke-width', 1);
+			}
+			else {
+				relevantElements[x].setAttribute('stroke', '#FFFFFF');
+				relevantElements[x].setAttribute('stroke-width', 1);
+				relevantElements[x].setAttribute('opacity',0.4);
+			}
+		}
+		document.getElementById('popup').style.visibility = "hidden";	
+	}
+
+	function defineArea(i,data) {
+		// setup the data mapping
+		var areaName = data[0];
+		var composite = parseFloat(data[1]);
+		var grocery = parseFloat(data[2]);
+		var housing = parseFloat(data[3]);
+		var utilities = parseFloat(data[4]);
+		var transportation = parseFloat(data[5]);
+		var healthcare = parseFloat(data[6]);
+		var misc = parseFloat(data[7]);
+		var medInc = parseFloat(data[8]);
+		var relative = parseFloat(data[11]);
+		var state = data[0].split(" ").slice(-1);
+		// figure out where this bar goes, based on the data
+
+	    var startY1 = (relative - 1)*500 + 400;
+	    var startX1 = 80 - medInc/2000;
+	    var endX1 = 80 + medInc/2000;
+	    drawBar (startX1, startY1, endX1, i, state);
+
+		var startY2 = (composite - 100)*5 + 400;
+		var startX2 = 280 - medInc/2000;
+		var endX2 = 280 + medInc/2000;
+	    drawBar (startX2, startY2, endX2, i, state);
+
+	    var startY3 = (housing - 100)*5 + 400;
+		var startX3 = 480 - medInc/2000;
+		var endX3 = 480 + medInc/2000;
+	    drawBar (startX3, startY3, endX3, i, state);
+
+	    var startY4 = (grocery - 100)*5 + 400;
+		var startX4 = 680 - medInc/2000;
+		var endX4 = 680 + medInc/2000;
+	    drawBar (startX4, startY4, endX4, i, state);
+
+	    var startY5 = (transportation - 100)*5 + 400;
+		var startX5 = 880 - medInc/2000;
+		var endX5 = 880 + medInc/2000;
+	    drawBar (startX5, startY5, endX5, i, state);
+
+	    var startY6 = (utilities - 100)*5 + 400;
+		var startX6 = 1080 - medInc/2000;
+		var endX6 = 1080 + medInc/2000;
+	    drawBar (startX6, startY6, endX6, i, state);
+
+	    var startY7 = (healthcare - 100)*5 + 400;
+		var startX7 = 1280 - medInc/2000;
+		var endX7 = 1280 + medInc/2000;
+	    drawBar (startX7, startY7, endX7, i, state);
+
+	    var startY8 = (misc - 100)*5 + 400;
+		var startX8 = 1480 - medInc/2000;
+		var endX8 = 1480 + medInc/2000;
+	    drawBar (startX8, startY8, endX8, i, state);
+
+	    drawLine(endX1,startY1,startX2,startY2,i, state);
+	    drawLine(endX2,startY2,startX3,startY3,i, state);
+	    drawLine(endX3,startY3,startX4,startY4,i, state);
+	    drawLine(endX4,startY4,startX5,startY5,i, state);
+	    drawLine(endX5,startY5,startX6,startY6,i, state);
+	    drawLine(endX6,startY6,startX7,startY7,i, state);
+	    drawLine(endX7,startY7,startX8,startY8,i, state);
+	}
+	/*
+	function drawBar(r,cx,cy,id) {
+	    // Draw a bar using parameters
+		// identify the SVG that we're drawing on
+		var mysvg = document.getElementById("mySVG");
+		
+		// Draw bar on it
+		var bar = document.createElementNS(svgns,"rect");
+		bar.setAttribute('width', r);
+		bar.setAttribute('x', cx);
+		bar.setAttribute('y', cy);
+		bar.setAttribute('height', 1);
+		bar.setAttribute('fill', "#E97F02");
+		bar.setAttribute('id', id);
+		bar.setAttribute('class', 'bar ' + id);
+		bar.setAttribute('onmouseover', 'mouseOver(evt)');
+		bar.setAttribute('onmouseout', 'mouseOut(evt)');
+		// var bar = document.createElementNS(svgns,'line');
+		// line.setAttribute('x1', cx);
+		// line.setAttribute('y1', cy)
+		mysvg.appendChild(bar);
+	}*/
+
+	function drawBar(x1,y1,x2,id, state) {
+		var mysvg = document.getElementById("mySVG");
+		var bar = document.createElementNS(svgns,"line");
+		bar.setAttribute('x1', x1);
+		bar.setAttribute('y1', y1);
+		bar.setAttribute('x2', x2);
+		bar.setAttribute('y2', y1);
+		bar.setAttribute('stroke', "#E97F02");
+		bar.setAttribute('stroke-width', 1);
+		bar.setAttribute('class', 'bar ' + id + " " + state);
+		bar.setAttribute('onmouseover', 'mouseOver(evt)');
+		bar.setAttribute('onmouseout', 'mouseOut(evt)');
+		bar.setAttribute('id', id);
+		mysvg.appendChild(bar);
+	}
+	
+	function drawLegendLine(x1,y1,x2,y2,id, state) {
+		var mysvg = document.getElementById("mySVG");
+		var line = document.createElementNS(svgns,"line");
+		line.setAttribute('x1', x1);
+		line.setAttribute('y1', y1);
+		line.setAttribute('x2', x2);
+		line.setAttribute('y2', y2);
+		line.setAttribute('stroke', "#E97F02");
+		line.setAttribute('stroke-width', 1);
+		line.setAttribute('class', 'connector '+ id + " " + state);
+		line.setAttribute('id', id);
+		line.setAttribute('opacity',1);
+		mysvg.appendChild(line);
+	}
+
+	function drawLine(x1,y1,x2,y2,id, state) {
+		var mysvg = document.getElementById("mySVG");
+		var line = document.createElementNS(svgns,"line");
+		line.setAttribute('x1', x1);
+		line.setAttribute('y1', y1);
+		line.setAttribute('x2', x2);
+		line.setAttribute('y2', y2);
+		line.setAttribute('stroke', "#FFFFFF");
+		line.setAttribute('stroke-width', 1);
+		line.setAttribute('class', 'connector '+ id + " " + state);
+		line.setAttribute('id', id);
+		line.setAttribute('opacity',0.4);
+		mysvg.appendChild(line);
+	}
+
+	function bringBarsToFront() {
+		var mysvg = document.getElementById("mySVG");
+		var everyBar = document.getElementsByClassName("bar");
+		for(x = everyBar.length-1; x >= 0; x--) {
+			mysvg.appendChild(everyBar[x]);
+		}
+	}
+  
+</script>
+</head>
+
+<body bgcolor='490A3D'>
+
+<h1 align='center' style="font-family:helvetica,arial,sans-serif; color:#E97F02">Cost of Living in America</h1>
+<p align='center' style="font-family:helvetica,arial,sans-serif; color:#E97F02">
+	The cost of living in America is remarkably high in many of its cities, especially<br/>
+	when compared to the median income of its population. This visualisation takes<br/> the cost of housing, groceries, transportation, utilities, health care, and more in<br/>
+	cities from across the 50 states and compares them to each other.<br/>
+</p>
+<p align='center' style="font-family:helvetica,arial,sans-serif; color:#E97F02">
+	For each column, the data is shown in ascending order from top to bottom. This<br/>
+	means, a city at the top of a column has a lower cost for that category than one<br/>
+	that is at the bottom of the same column. An exception is made for the "relative"<br/>
+	column, as it ranks cities from least favourable to most favourable when both the<br/>
+	median income and cost of living have been taken into consideration. For every<br/>
+	column, each city is represented by a line, where the length of the line indicates<br/>
+	the median income of the given city.<br/>
+</p>
+<p><br/></p>
+
+<svg id="mySVG" width=1575 height=2100>
+	<text x='80' y='12' fill='#E97F02' font-variant='small-caps' font-family='Helvetica, Arial, sans-serif' font-weight='bold' text-anchor='middle' fill='black'>Relative</text>
+	<text x='280' y='12' fill='#E97F02' font-variant='small-caps' font-family='Helvetica, Arial, sans-serif' font-weight='bold' text-anchor='middle' fill='black'>Composite</text>
+	<text x='480' y='12' fill='#E97F02' font-variant='small-caps' font-family='Helvetica, Arial, sans-serif' font-weight='bold' text-anchor='middle' fill='black'>Housing</text>
+	<text x='680' y='12' fill='#E97F02' font-variant='small-caps' font-family='Helvetica, Arial, sans-serif' font-weight='bold' text-anchor='middle' fill='black'>Grocery</text>
+	<text x='880' y='12' fill='#E97F02' font-variant='small-caps' font-family='Helvetica, Arial, sans-serif' font-weight='bold' text-anchor='middle' fill='black'>Transportation</text>
+	<text x='1080' y='12' fill='#E97F02' font-variant='small-caps' font-family='Helvetica, Arial, sans-serif' font-weight='bold' text-anchor='middle' fill='black'>Utilities</text>
+	<text x='1280' y='12' fill='#E97F02' font-variant='small-caps' font-family='Helvetica, Arial, sans-serif' font-weight='bold' text-anchor='middle' fill='black'>Health Care</text>z
+	<text x='1480' y='12' fill='#E97F02' font-variant='small-caps' font-family='Helvetica, Arial, sans-serif' font-weight='bold' text-anchor='middle' fill='black'>Miscellaneous</text>
+	<text x='1450' y='815' font-size='10' fill='#E97F02' font-family='Helvetica, Arial, sans-serif' text-anchor='middle'>100</text>
+	<text x='1510' y='815' font-size='10' fill='#E97F02' font-family='Helvetica, Arial, sans-serif' text-anchor='middle'>100</text>
+	<text x='1410' y='815' font-size='10' fill='#E97F02' font-family='Helvetica, Arial, sans-serif' text-anchor='middle'>270</text>
+	<text x='1550' y='815' font-size='10' fill='#E97F02' font-family='Helvetica, Arial, sans-serif' text-anchor='middle'>270</text>
+
+</svg>
+
+
+<!-- <p style="line-height: 150%;">
+<strong>or Fuel Type:</strong><br />
+<span class="fuelType" style="background-color:#000000">COAL</span>
+<span class="fuelType" style="background-color:#00ff00">BIOMASS</span>
+<span class="fuelType" style="background-color:#0000ff">HYDRO</span>
+<span class="fuelType" style="background-color:#777700">OIL</span>
+<span class="fuelType" style="background-color:#DFE101">GAS</span><br />
+<span class="fuelType" style="background-color:#A6A277">GEOTHERMAL</span>
+<span class="fuelType" style="background-color:#FF66FF">WIND</span>
+<span class="fuelType" style="background-color:#ffff00; color:#999999;">SOLAR</span>
+<span class="fuelType" style="background-color:#00ffff">NUCLEAR</span>
+<span class="fuelType" style="background-color:#cccccc">OTHER</span>
+</p>
+
+<p>
+<button onClick="dimAll()">Dim All</button>
+<button onClick="resetAll()">Reset All</button>
+</p>
+
+<p style="margin-top: 30px;">
+&middot; Color of bubble represents fuel type<br />
+&middot; Size of bubble represents plant generation capacity<br />
+&middot; Height of bubble represents equivalent CO2 emissions (CO2e)<br />
+&middot; Left to right is plant location in the US, by longitude.<br />&nbsp;&nbsp;(latitude is not represented)
+</p> -->
+<div id="popup" style="left: 930px; top: 230px; visibility: hidden;">
+Area: <span id="areaName">100</span><br>
+Relative: <span id="relative">100</span><br>
+Income: <span id="income">100</span><br>
+Composite: <span id="composite">100</span><br>
+Housing: <span id="housing">100</span><br>
+Grocery: <span id="grocery">100</span><br>
+Transportation: <span id="transportation">100</span><br>
+Utilities: <span id="utilities">100</span><br>
+Health Care: <span id="health">100</span><br>
+Miscellaneous: <span id="misc">100</span><br>
+</div>
+
+<div id="controls" style='left:1290px; top: 300px;'>
+<strong>Filter by State:</strong> 
+<select style="color:E97F02; background-color:#490A3D" name="state" onchange="filterState(this.value)">
+    <option value="All">All States</option>
+    <option value="AL">Alabama</option>
+    <option value="AK">Alaska</option>
+    <option value="AZ">Arizona</option>
+    <option value="AR">Arkansas</option>
+    <option value="CA">California</option>
+    <option value="CO">Colorado</option>
+    <option value="CT">Connecticut</option>
+    <option value="DE">Delaware</option>
+    <option value="DC">Dist. of Columbia</option>
+    <option value="FL">Florida</option>
+    <option value="GA">Georgia</option>
+    <option value="HI">Hawaii</option>
+    <option value="ID">Idaho</option>
+    <option value="IL">Illinois</option>
+    <option value="IN">Indiana</option>
+    <option value="IA">Iowa</option>
+    <option value="KS">Kansas</option>
+    <option value="KY">Kentucky</option>
+    <option value="LA">Louisiana</option>
+    <option value="ME">Maine</option>
+    <option value="MD">Maryland</option>
+    <option value="MA">Massachusetts</option>
+    <option value="MI">Michigan</option>
+    <option value="MN">Minnesota</option>
+    <option value="MS">Mississippi</option>
+    <option value="MO">Missouri</option>
+    <option value="MT">Montana</option>
+    <option value="NE">Nebraska</option>
+    <option value="NV">Nevada</option>
+    <option value="NH">New Hampshire</option>
+    <option value="NJ">New Jersey</option>
+    <option value="NM">New Mexico</option>
+    <option value="NY">New York</option>
+    <option value="NC">North Carolina</option>
+    <option value="ND">North Dakota</option>
+    <option value="OH">Ohio</option>
+    <option value="OK">Oklahoma</option>
+    <option value="OR">Oregon</option>
+    <option value="PA">Pennsylvania</option>
+    <option value="RI">Rhode Island</option>
+    <option value="SC">South Carolina</option>
+    <option value="SD">South Dakota</option>
+    <option value="TN">Tennessee</option>
+    <option value="TX">Texas</option>
+    <option value="UT">Utah</option>
+    <option value="VT">Vermont</option>
+    <option value="VA">Virginia</option>
+    <option value="WA">Washington</option>
+    <option value="WV">West Virginia</option>
+    <option value="WI">Wisconsin</option>
+    <option value="WY">Wyoming</option>
+</select>
+
+</body>
+</html>
